@@ -7,9 +7,9 @@ import scipy.io as sio
 import numpy as np
 
 entities_string='/entities.txt'
-relations_string='/relations.txt'
+relations_string='/relationsII.txt'
 embeds_string='/initEmbed.mat'
-training_string='/train.txt'
+training_string='/trainII.txt'
 test_string='/test.txt'
 dev_string='/dev.txt'
 
@@ -45,10 +45,8 @@ def load_embeds(file_path):
     tree = mat_contents['tree']
     word_vecs = [[we[j][i] for j in range(params.embedding_size)] for i in range(len(words[0]))]
     entity_words = [list(map(int, tree[i][0][0][0][0][0])) for i in range(len(tree))]
-    #entity_words = [int(tree[i][0][0][0][0][0]) for i in range(len(tree))]
-    #print ('entity words', entity_words)
     # wordvec, id
-    return (word_vecs,entity_words)
+    return word_vecs, entity_words
 
 def load_training_data(data_path=params.data_path):
     training_file = open(data_path+training_string)

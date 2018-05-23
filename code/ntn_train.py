@@ -18,19 +18,18 @@ def data_to_indexed(data, entities, relations):
 
 def get_batch(batch_size, data, num_entities, corrupt_size):
     random_indices = random.sample(range(len(data)), batch_size)
-    #data[i][0] = e1, data[i][1] = r, data[i][2] = e2, random=e3 (corrupted)
     batch = [(data[i][0], data[i][1], data[i][2], random.randint(0, num_entities-1))\
     for i in random_indices for j in range(corrupt_size)]
     return batch
 
 def split_batch(data_batch, num_relations):
     batches = [[] for i in range(num_relations)]
-    for e1,r,e2,e3 in data_batch:
-        batches[r].append((e1,e2,e3))
+    for e1, r, e2, e3 in data_batch:
+        batches[r].append((e1, e2, e3))
     return batches
 
 def fill_feed_dict(batches, train_both, batch_placeholders, label_placeholders, corrupt_placeholder):
-    feed_dict = {corrupt_placeholder: [train_both and np.random.random()>0.5]}
+    feed_dict = {corrupt_placeholder: [train_both and np.random.random() > 0.5]}
     for i in range(len(batch_placeholders)):
         feed_dict[batch_placeholders[i]] = batches[i]
         feed_dict[label_placeholders[i]] = [[0.0] for j in range(len(batches[i]))]
@@ -38,18 +37,18 @@ def fill_feed_dict(batches, train_both, batch_placeholders, label_placeholders, 
 
 def run_training():
     print("Begin!")
-    #python list of (e1, R, e2) for entire training set in string form
+    # python list of (e1, R, e2) for entire training set in string form
     print("Load training data...")
     raw_training_data = ntn_input.load_training_data(params.data_path)
     print("Load entities and relations...")
     entities_list = ntn_input.load_entities(params.data_path)
     relations_list = ntn_input.load_relations(params.data_path)
-    #python list of (e1, R, e2) for entire training set in index form
+    # python list of (e1, R, e2) for entire training set in index form
     # subject, predicate, object
     indexed_training_data = data_to_indexed(raw_training_data, entities_list, relations_list)
     print("Load embeddings...")
     # wordvecs, ids
-    (init_word_embeds, entity_to_wordvec) = ntn_input.load_init_embeds(params.data_path)
+    init_word_embeds, entity_to_wordvec = ntn_input.load_init_embeds(params.data_path)
 
     num_entities = len(entities_list)
     num_relations = len(relations_list)
@@ -64,7 +63,7 @@ def run_training():
         batch_placeholders = [tf.placeholder(tf.int32, shape=(None, 3), name='batch_'+str(i)) for i in range(num_relations)]
         label_placeholders = [tf.placeholder(tf.float32, shape=(None, 1), name='label_'+str(i)) for i in range(num_relations)]
 
-        corrupt_placeholder = tf.placeholder(tf.bool, shape=(1)) #Which of e1 or e2 to corrupt?
+        corrupt_placeholder = tf.placeholder(tf.bool, shape=(1)) # Which of e1 or e2 to corrupt?
         inference = ntn.inference(batch_placeholders, corrupt_placeholder, init_word_embeds, entity_to_wordvec, \
                 num_entities, num_relations, slice_size, batch_size, False, label_placeholders)
         loss = ntn.loss(inference, params.regularization)
@@ -79,14 +78,14 @@ def run_training():
         sess.run(init)
         saver = tf.train.Saver(tf.trainable_variables())
         for i in range(1, num_iters):
-            print("Starting iter "+str(i)+" "+str(datetime.datetime.now()))
+            print("Starting iter " + str(i) + " " + str(datetime.datetime.now()))
             # randomised subjects, predicates, objects, for given predicate
             data_batch = get_batch(batch_size, indexed_training_data, num_entities, corrupt_size)
             # relation, e1s, e2s, e_corrupts
             relation_batches = split_batch(data_batch, num_relations)
 
             if i % params.save_per_iter == 0:
-                saver.save(sess, params.output_path+"/"+params.data_name+str(i)+'.sess')
+                saver.save(sess, params.output_path + "/" + params.data_name + str(i) + '.sess')
 
             feed_dict = fill_feed_dict(relation_batches, params.train_both, batch_placeholders, label_placeholders, corrupt_placeholder)
             _, loss_value = sess.run([training, loss], feed_dict=feed_dict)
