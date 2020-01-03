@@ -7,9 +7,9 @@ import scipy.io as sio
 import numpy as np
 
 entities_string='/entities.txt'
-relations_string='/relationsII.txt'
+relations_string='/relations.txt'
 embeds_string='/initEmbed.mat'
-training_string='/trainII.txt'
+training_string='/train.txt'
 test_string='/test.txt'
 dev_string='/dev.txt'
 
@@ -54,7 +54,7 @@ def load_training_data(data_path=params.data_path):
     return np.array(training_data)
 
 def load_dev_data(data_path=params.data_path):
-    dev_file = open(data_path+test_string)
+    dev_file = open(data_path+dev_string)
     dev_data = [line.split('\t') for line in dev_file.read().strip().split('\n')]
     return np.array(dev_data)
 
