@@ -22,7 +22,7 @@ stream_handler.setLevel(logging.INFO)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
-file_handler = logging.FileHandler('rntn_train_validate_and_test_baseline.log')
+file_handler = logging.FileHandler('rntn_train_validate_and_test_wordnet_baseline.log')
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -90,7 +90,7 @@ def split_batch_eval(data, indices, num_entities):
     return batch
 
 
-def fill_feed_dict_train(batches, train_both, batch_placeholders, label_placeholders, corrupt_placeholder):
+def fill_feed_dict_evaluate(batches, train_both, batch_placeholders, label_placeholders, corrupt_placeholder):
     feed_dict = {corrupt_placeholder: [train_both and np.random.random() > 0.5]}
     logger.debug(f'batches: {batches}')
 
@@ -270,11 +270,11 @@ def run_training(
             if i % params.save_per_iter == 0:
                 saver.save(sess, params.output_path + "/" + params.data_name + str(i) + '.sess')
 
-            feed_dict = fill_feed_dict_train(relation_batches,
-                                             params.train_both,
-                                             batch_placeholders,
-                                             label_placeholders,
-                                             corrupt_placeholder)
+            feed_dict = fill_feed_dict_evaluate(relation_batches,
+                                                params.train_both,
+                                                batch_placeholders,
+                                                label_placeholders,
+                                                corrupt_placeholder)
 
             _, cost_training = sess.run([training, loss], feed_dict=feed_dict)
             accuracy_training = do_eval(sess,
@@ -303,16 +303,16 @@ def run_training(
             logger.info(f'epoch: {i}, cost_validation: {cost_validation}')
             logger.info(f'epoch: {i}, accuracy_validation: {accuracy_validation}')
 
-            cost_test, accuracy_test = test(indexed_test_data,
-                                            num_relations,
-                                            inference_train,
-                                            batch_placeholders,
-                                            label_placeholders,
-                                            corrupt_placeholder,
-                                            sess,
-                                            eval_correct,
-                                            batch_size,
-                                            i)
+            cost_test, accuracy_test = evaluate(indexed_test_data,
+                                                num_relations,
+                                                inference_train,
+                                                batch_placeholders,
+                                                label_placeholders,
+                                                corrupt_placeholder,
+                                                sess,
+                                                eval_correct,
+                                                batch_size,
+                                                i)
 
             logger.info(f'epoch: {i}, cost_test: {cost_test}')
             logger.info(f'epoch: {i}, accuracy_test: {accuracy_test}')
@@ -323,30 +323,32 @@ def run_training(
         logger.info("model checkpoint complete!")
 
 
-def evaluate(indexed_validation_data,
+def evaluate(indexed_evaluation_data,
              num_relations,
-             inference_train,
+             inference_evaluate,
              batch_placeholders,
              label_placeholders,
              corrupt_placeholder,
              sess,
              eval_correct,
              batch_size,
-             epoch):
+             epoch,
+             data_type):
 
-    logger.info("Starting VALIDATION " + str(epoch))
-    batches_validation, labels_validation = data_to_relation_sets(
-        indexed_validation_data, num_relations)
+    data_type_map = {'validation': 'VALIDATION', 'testing': 'TESTING'}
+    data_type = data_type_map[data_type]
+    logger.info(f'Starting {data_type} {epoch}')
+    batches_validation, labels_validation = data_to_relation_sets(indexed_evaluation_data, num_relations)
 
-    loss_validation = ntn.loss(inference_train, params.regularization)
-    feed_dict = fill_feed_dict_train(batches_validation,
-                                     params.train_both,
-                                     batch_placeholders,
-                                     label_placeholders,
-                                     corrupt_placeholder)
+    loss_evaluation = ntn.loss(inference_evaluate, params.regularization)
+    feed_dict = fill_feed_dict_evaluate(batches_validation,
+                                        params.train_both,
+                                        batch_placeholders,
+                                        label_placeholders,
+                                        corrupt_placeholder)
 
-    cost_validation, = sess.run([loss_validation], feed_dict=feed_dict)
-    accuracy_validation = do_eval(sess,
+    cost_evaluation, = sess.run([loss_evaluation], feed_dict=feed_dict)
+    accuracy_evaluation = do_eval(sess,
                                   eval_correct,
                                   batch_placeholders,
                                   label_placeholders,
@@ -355,41 +357,7 @@ def evaluate(indexed_validation_data,
                                   labels_validation,
                                   batch_size)
 
-    return cost_validation, accuracy_validation
-
-
-def test(indexed_test_data,
-         num_relations,
-         inference_train,
-         batch_placeholders,
-         label_placeholders,
-         corrupt_placeholder,
-         sess,
-         eval_correct,
-         batch_size,
-         epoch):
-
-    logger.info("Starting TESTING " + str(epoch))
-    batches_test, labels_test = data_to_relation_sets(indexed_test_data, num_relations)
-
-    loss_test = ntn.loss(inference_train, params.regularization)
-    feed_dict = fill_feed_dict_train(batches_test,
-                                     params.train_both,
-                                     batch_placeholders,
-                                     label_placeholders,
-                                     corrupt_placeholder)
-
-    cost_test, = sess.run([loss_test], feed_dict=feed_dict)
-    accuracy_test = do_eval(sess,
-                            eval_correct,
-                            batch_placeholders,
-                            label_placeholders,
-                            corrupt_placeholder,
-                            batches_test,
-                            labels_test,
-                            batch_size)
-
-    return cost_test, accuracy_test
+    return cost_evaluation, accuracy_evaluation
 
 
 def main(argv):
