@@ -22,7 +22,7 @@ stream_handler.setLevel(logging.INFO)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
-file_handler = logging.FileHandler('rntn_train_validate_and_test_wordnet_baseline.log')
+file_handler = logging.FileHandler('rntn_train_validate_and_test_freebase_baseline.log')
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -298,7 +298,8 @@ def run_training(
                                                             sess,
                                                             eval_correct,
                                                             batch_size,
-                                                            i)
+                                                            i,
+                                                            'validation')
 
             logger.info(f'epoch: {i}, cost_validation: {cost_validation}')
             logger.info(f'epoch: {i}, accuracy_validation: {accuracy_validation}')
@@ -312,7 +313,8 @@ def run_training(
                                                 sess,
                                                 eval_correct,
                                                 batch_size,
-                                                i)
+                                                i,
+                                                'testing')
 
             logger.info(f'epoch: {i}, cost_test: {cost_test}')
             logger.info(f'epoch: {i}, accuracy_test: {accuracy_test}')

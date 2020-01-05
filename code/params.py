@@ -1,7 +1,7 @@
 import os
 import math
 
-data_number = 0  # 0 - Wordnet, 1 - Freebase
+data_number = 1  # 0 - Wordnet, 1 - Freebase
 
 if data_number == 0:
     data_name = 'Wordnet'
